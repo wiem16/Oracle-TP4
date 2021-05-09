@@ -168,13 +168,14 @@ ________________________________________________________________________________
       * [ username: devsecops1, password: devsecops1 ]
       * [ username: devsecops2, password: devsecops2 ]
 
-
+```sql
 create user dev1 identified by dev1;
 create user dev2 identified by dev2;
 create user tester1 identified by tester1;
 create user tester2 identified by tester2;
 create user devsecops1 identified by devsecops1;
 create user devsecops2 identified by devsecops2;
+```
 
   --->  **Une fois qu'un utilisateur est créé, le DBA peut octroyer des privilèges de système spécifiques à cet utilisateur.**
  
@@ -186,7 +187,7 @@ create user devsecops2 identified by devsecops2;
      * Création de séquence.
      * Création de session.
      * Création,lecture, modification de structure et suppression de tables.
-
+```sql
 grant create procedure,
 create view,
 create sequence,
@@ -197,12 +198,13 @@ alter any table,
 drop any table
 to 
 dev1;
+```
 
 ¤   **Une fois qu'un utilisateur est créé, le DBA peut octroyer des privilèges de système spécifiques à cet utilisateur.**
  
  
    - **Révoquer tous les privilèges associès à l'utilisateur dev1 :** 
-
+```sql
 Revoke
 create procedure,
 create view,
@@ -214,7 +216,7 @@ alter any table,
 drop any table
 from
 dev1;
-
+```
  
   - **Créer des rôles dédiés pour chaque Equipe d'utilisateurs en réspectant les critères suivants** 
 
@@ -241,13 +243,26 @@ create role devsecops;
 
 ```
 ```sql
----
+grant create procedure,
+create view,
+create sequence,
+create session,
+create any table,
+select any table,
+alter any table,
+drop any table
+to 
+dev;
 ```
 ```sql
----
+grant connect,
+create session,
+select any table to tester;
 ```
 ```sql
----
+grant all privileges
+    to devsecops 
+   with admin option;
 ```
 
 
@@ -256,24 +271,24 @@ create role devsecops;
   
 
 ```sql
----
+grant dev to dev1,dev2;
 ```
 ```sql
----
+grant tester to tester1,tester2;
 ```
 ```sql
----
+grant dev to devsecops1,devsecops2;
 ```
 
    - **Limiter l'accès pour les testeurs de sorte qu'ils n'accèdent qu'à la table des employés "EMP":** 
   
 
 ```sql
----
+revoke connect ,create session,select any table from tester;
 ```
 
  ```sql
----
+grant select on emp to tester;
 ```
  
  
@@ -282,7 +297,8 @@ create role devsecops;
   
 
  ```sql
----
+grant select on emp to dev;
+grant select on emp to devsecops;
 ```
 
 **Retirer les privilèges attribuées aux admins, ainsi que les utilisateurs qui ont reçu leurs privilèges sur la table EMP par un membre de l'équipe devsecops:**
@@ -290,7 +306,7 @@ create role devsecops;
  
  
 ```sql
----
+revoke select on emp from devsecops;
 ```
 
 
@@ -308,7 +324,16 @@ create role devsecops;
 
 
 ```sql 
----
+create profile dev limit
+SESSIONS_PER_USER unlimited
+CPU_PER_SESSION 10000
+CPU_PER_CALL 1000
+CONNECT_TIME 45
+LOGICAL_READS_PER_SESSION default
+LOGICAL_READS_PER_CALL  1000
+PRIVATE_SGA  25k
+PASSWORD_LIFE_TIME 60
+PASSWORD_REUSE_MAX 10;
 ```
 
 
@@ -325,7 +350,16 @@ create role devsecops;
   * ***Durée de vie en jours du mot de passe:*** ***60***
   * ***Nombre maximal de réutilisations de mot de passe:*** ***10***
 ```sql 
----
+create profile tester limit
+SESSIONS_PER_USER 5
+CPU_PER_SESSION unlimited
+CPU_PER_CALL 3000
+CONNECT_TIME 45
+LOGICAL_READS_PER_SESSION default
+LOGICAL_READS_PER_CALL  1000
+PRIVATE_SGA  25k
+PASSWORD_LIFE_TIME   60
+PASSWORD_REUSE_MAX   10;
 ```
 
 **Créer un profile de ressources dédié à l'équipe devsecops avec les limitations suivantes:**
@@ -340,11 +374,20 @@ create role devsecops;
   * ***Nombre maximal de réutilisations de mot de passe:*** ***10***
 
 ```sql 
----
+create profile devsecops limit
+SESSIONS_PER_USER unlimited
+CPU_PER_SESSION unlimited
+CPU_PER_CALL 3000
+CONNECT_TIME 3600
+LOGICAL_READS_PER_SESSION default
+LOGICAL_READS_PER_CALL  5000
+PRIVATE_SGA  80k
+PASSWORD_LIFE_TIME 60
+PASSWORD_REUSE_MAX 10;
 ```
 
   - **Attribuer à l'utilisateur "dev1", le profile qui lui correspond:** 
 ```sql
----
+alter user dev1 profile dev;
 ```
 
